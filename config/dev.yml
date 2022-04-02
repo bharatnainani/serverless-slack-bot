@@ -1,0 +1,5 @@
+REGION: eu-west-2
+STAGE: dev
+LOG_GROUP_NAME: /aws/lambda/s3list
+FILTER_PATTERN: '?AccessDenied'
+WEBHOOK_URL_NAME: "SlackWebHookURL"

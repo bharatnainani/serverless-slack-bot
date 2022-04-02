@@ -1,0 +1,52 @@
+service: botServerless
+provider:
+  name: aws
+  stage: ${file(./config/${opt:stage, 'dev'}.yml):STAGE}
+  region: ${file(./config/${opt:stage, 'dev'}.yml):REGION}
+  environment:
+    SLACK_WEBHOOK_URL: ${file(./config/${opt:stage, 'dev'}.yml):WEBHOOK_URL_NAME}
+    FILTER_PATTERN: ${file(./config/${opt:stage, 'dev'}.yml):FILTER_PATTERN}
+  lambdaHashingVersion: 20201221
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - lambda:InvokeFunction
+        - lambda:InvokeAsync
+      Resource: "*"
+    - Effect: Allow
+      Action:
+        - logs:CreateLogGroup
+        - logs:CreateLogStream
+        - logs:PutLogEvents
+      Resource: "*"
+    - Effect: Allow
+      Action: ses:SendEmail
+      Resource: "*"
+    - Effect: Allow
+      Action: ssm:*
+      Resource: "*"
+package:
+  exclude:
+    - node_modules/**
+    - package-lock.json
+    - package.json
+    - __pycache__/**
+functions:
+  slack-notification:
+    handler: main.lambda_handler
+    name: botServerless
+    description: "A serverless bot for sending specific string logs from cloudwatch log to slack channel"
+    memorySize: 150
+    timeout: 30
+    runtime: python3.8
+    events:
+      - cloudwatchLog:
+          logGroup: ${file(./config/${opt:stage, 'dev'}.yml):LOG_GROUP_NAME}
+          filter: ${file(./config/${opt:stage, 'dev'}.yml):FILTER_PATTERN}
+
+plugins:
+  - serverless-python-requirements
+custom:
+  pythonRequirements:
+    pythonBin: python3
+    dockerizePip: "false"
